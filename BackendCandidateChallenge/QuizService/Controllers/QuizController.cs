@@ -37,7 +37,14 @@ public class QuizController : Controller
     public object Get(int id)
     {
         const string quizSql = "SELECT * FROM Quiz WHERE Id = @Id;";
-        var quiz = _connection.QuerySingle<Quiz>(quizSql, new {Id = id});
+        Quiz quiz;
+        try{
+            quiz = _connection.QuerySingle<Quiz>(quizSql, new {Id = id});
+        }
+        catch{
+            return NotFound();
+        }
+        
         if (quiz == null)
             return NotFound();
         const string questionsSql = "SELECT * FROM Question WHERE QuizId = @QuizId;";
@@ -111,9 +118,15 @@ public class QuizController : Controller
     [Route("{id}/questions")]
     public IActionResult PostQuestion(int id, [FromBody]QuestionCreateModel value)
     {
-        const string sql = "INSERT INTO Question (Text, QuizId) VALUES(@Text, @QuizId); SELECT LAST_INSERT_ROWID();";
-        var questionId = _connection.ExecuteScalar(sql, new {Text = value.Text, QuizId = id});
-        return Created($"/api/quizzes/{id}/questions/{questionId}", null);
+        try{
+            const string sql = "INSERT INTO Question (Text, QuizId) VALUES(@Text, @QuizId); SELECT LAST_INSERT_ROWID();";
+            var questionId = _connection.ExecuteScalar(sql, new {Text = value.Text, QuizId = id});
+            return Created($"/api/quizzes/{id}/questions/{questionId}", null);
+        }
+        catch {
+            return NotFound();
+        }
+        
     }
 
     // PUT api/quizzes/5/questions/6
